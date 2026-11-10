@@ -1,0 +1,121 @@
+{% extends "produksi/base.html" %}
+{% block judul %}Pilih mesin · Data Harian Produksi{% endblock %}
+{% block lebar %}lebar-operator{% endblock %}
+{% block isi %}
+<section class="kepala-operator">
+  <h1>Pilih mesin Anda</h1>
+  <p class="konteks">{{ tanggal|date:"l, j F Y" }} · Shift {{ shift }}</p>
+  {% include "produksi/_pilih_operator.html" %}
+
+  {# Tanggal dan shift langsung terlihat, tanpa lipatan "Ganti tanggal atau shift" #}
+  <form method="get" id="form-hari" class="kontrol-hari">
+    <div class="kontrol-tanggal">
+      <label for="id_tanggal">Tanggal:</label>
+      {{ pilih.tanggal }}
+    </div>
+    <div class="seg-shift" role="group" aria-label="Pilih shift">
+      <button type="submit" name="shift" value="Pagi" class="seg{% if shift == 'Pagi' %} aktif{% endif %}">Shift Pagi</button>
+      <button type="submit" name="shift" value="Malam" class="seg{% if shift == 'Malam' %} aktif{% endif %}">Shift Malam</button>
+    </div>
+  </form>
+
+  <div class="tab-saring tab-operator" role="group" aria-label="Saring menurut status">
+    <button type="button" class="tab aktif" data-saring="semua" aria-pressed="true">Semua (<span id="n-semua">{{ kartu|length }}</span>)</button>
+    <button type="button" class="tab" data-saring="siap-diisi" aria-pressed="false">Siap diisi (<span id="n-siap-diisi">0</span>)</button>
+    <button type="button" class="tab" data-saring="terkirim" aria-pressed="false">Terkirim (<span id="n-terkirim">0</span>)</button>
+    <button type="button" class="tab" data-saring="disetujui" aria-pressed="false">Disetujui (<span id="n-disetujui">0</span>)</button>
+    <button type="button" class="tab" data-saring="menunggu-admin" aria-pressed="false">Menunggu admin (<span id="n-menunggu-admin">0</span>)</button>
+  </div>
+</section>
+
+<ul class="grid-mesin" id="grid-mesin">
+  {% for k in kartu %}
+  {% with f=k.formulir %}
+  {% if f %}{% with st=f.status_operator %}
+  <li class="kartu-mesin st-{{ st|slugify }}" data-kelompok="{% if st == 'Sedang diisi' %}siap-diisi{% else %}{{ st|slugify }}{% endif %}">
+    <div class="mesin-judul">
+      <strong class="mesin-nama">{{ k.mesin.kode }}</strong>
+      {% include "produksi/_status.html" with status=st %}
+    </div>
+    {% if f.jumlah_baris %}
+      <div class="progres-info">
+        <span>{{ f.jumlah_terisi }} dari {{ f.jumlah_baris }} baris terisi</span>
+        <strong>{% widthratio f.jumlah_terisi f.jumlah_baris 100 %}%</strong>
+      </div>
+      <div class="progres" aria-hidden="true"><div style="width: {% widthratio f.jumlah_terisi f.jumlah_baris 100 %}%"></div></div>
+      {% if f.operator_bisa_ubah %}
+        <a class="tombol utama penuh" href="{% url 'operator_isi' f.pk %}">{% if f.jumlah_terisi %}Lanjutkan mengisi{% else %}Mulai mengisi{% endif %}</a>
+      {% else %}
+        <a class="tombol penuh" href="{% url 'operator_isi' f.pk %}">Lihat data</a>
+      {% endif %}
+    {% else %}
+      <p class="mesin-info">Admin belum menyiapkan item dan plan</p>
+      <div class="kaki-menunggu"><span>Belum dapat diisi operator</span><span>Menunggu jadwal</span></div>
+    {% endif %}
+  </li>
+  {% endwith %}
+  {% else %}
+  <li class="kartu-mesin st-menunggu-admin menunggu" data-kelompok="menunggu-admin">
+    <div class="mesin-judul">
+      <strong class="mesin-nama">{{ k.mesin.kode }}</strong>
+      {% include "produksi/_status.html" with status="Menunggu admin" %}
+    </div>
+    <p class="mesin-info">Admin belum menyiapkan item dan plan</p>
+    <div class="kaki-menunggu"><span>Belum dapat diisi operator</span><span>Menunggu jadwal</span></div>
+  </li>
+  {% endif %}
+  {% endwith %}
+  {% empty %}
+  <li class="kartu">Belum ada mesin aktif.</li>
+  {% endfor %}
+</ul>
+
+<div class="keadaan-kosong kartu" id="keadaan-kosong" hidden>
+  <p><strong>Tidak ada mesin pada kategori status ini.</strong></p>
+  <button type="button" class="tombol kecil" id="tampil-semua">Tampilkan semua mesin</button>
+</div>
+{% endblock %}
+
+{% block skrip %}
+<script>
+  (function () {
+    // Ganti tanggal: langsung muat ulang dengan shift yang sedang dipilih
+    var form = document.getElementById('form-hari');
+    var tanggal = document.getElementById('id_tanggal');
+    tanggal.addEventListener('change', function () {
+      var aktif = form.querySelector('.seg.aktif');
+      if (form.requestSubmit) { form.requestSubmit(aktif); } else { form.submit(); }
+    });
+
+    // Saring kartu menurut status, di browser saja
+    var kartu = [].slice.call(document.querySelectorAll('#grid-mesin .kartu-mesin'));
+    var tab = [].slice.call(document.querySelectorAll('.tab-operator .tab'));
+    var kosong = document.getElementById('keadaan-kosong');
+    var aktif = 'semua';
+
+    ['siap-diisi', 'terkirim', 'disetujui', 'menunggu-admin'].forEach(function (k) {
+      document.getElementById('n-' + k).textContent =
+        kartu.filter(function (el) { return el.getAttribute('data-kelompok') === k; }).length;
+    });
+
+    function terapkan() {
+      var tampil = 0;
+      kartu.forEach(function (el) {
+        var ok = aktif === 'semua' || el.getAttribute('data-kelompok') === aktif;
+        el.hidden = !ok;
+        if (ok) tampil++;
+      });
+      kosong.hidden = tampil > 0;
+      tab.forEach(function (b) {
+        var hidup = b.getAttribute('data-saring') === aktif;
+        b.classList.toggle('aktif', hidup);
+        b.setAttribute('aria-pressed', hidup ? 'true' : 'false');
+      });
+    }
+    tab.forEach(function (b) {
+      b.addEventListener('click', function () { aktif = b.getAttribute('data-saring'); terapkan(); });
+    });
+    document.getElementById('tampil-semua').addEventListener('click', function () { aktif = 'semua'; terapkan(); });
+  })();
+</script>
+{% endblock %}

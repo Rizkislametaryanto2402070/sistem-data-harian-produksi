@@ -1,0 +1,16 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Master data · Data Harian Produksi{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'produksi/bilah.css' %}">
+<link rel="stylesheet" href="{% static 'produksi/admin.css' %}">
+{% endblock %}
+
+{# Bilah atas yang sama dengan halaman Produksi, ditambah tombol Ganti sandi dari header admin lama #}
+{% block header %}{% include "produksi/_bilah_atas.html" with sandi=True %}{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+{% block branding %}{% endblock %}
+{% block nav-global %}{% endblock %}

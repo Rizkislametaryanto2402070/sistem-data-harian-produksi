@@ -1,0 +1,27 @@
+{% load static %}<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block judul %}Data Harian Produksi{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'produksi/bilah.css' %}">
+  <link rel="stylesheet" href="{% static 'produksi/app.css' %}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  {% block header %}
+  {% include "produksi/_bilah_atas.html" %}
+  {% endblock %}
+
+  <main class="isi {% block lebar %}{% endblock %}">
+    {% if messages %}
+    <ul class="pesan" role="status">
+      {% for m in messages %}<li class="pesan-{{ m.level_tag }}">{{ m }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% block isi %}{% endblock %}
+  </main>
+
+  {% block kaki %}<footer class="kaki">Sistem Internal Produksi · Nama Perusahaan</footer>{% endblock %}
+  {% block skrip %}{% endblock %}
+</body>
+</html>

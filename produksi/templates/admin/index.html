@@ -1,0 +1,173 @@
+{% extends "admin/base_site.html" %}
+{% load log master_data %}
+
+{% block bodyclass %}{{ block.super }} dashboard master-data{% endblock %}
+{% block coltype %}pd-lebar{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block sidebar %}{% endblock %}
+
+{% block content %}
+{% ringkasan_master as ring %}
+{% get_admin_log 10 as admin_log for_user user %}
+
+<section class="md-kepala">
+  <nav class="md-remah" aria-label="Jalur halaman">
+    <a href="{% url 'panel_beranda' %}">Beranda Produksi</a><span>/</span><span>Kelola Data Produksi</span>
+  </nav>
+  <div class="md-judul-baris">
+    <div>
+      <h1 class="md-judul">Master data</h1>
+      <p class="md-sub">Kelola katalog nomor part (item), daftar mesin produksi, arsip formulir harian, serta akun operator dan grup akses.</p>
+    </div>
+    <div class="md-alat">
+      <div class="md-cari">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="cari-modul" placeholder="Cari modul atau riwayat..." aria-label="Cari modul atau riwayat">
+      </div>
+      <a class="md-tombol-ubah" href="{% url 'panel_beranda' %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        <span>Lihat Situs Produksi</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="md-ringkas" aria-label="Ringkasan master data">
+  <div class="md-ringkas-item">
+    <div><div class="md-ringkas-label">Katalog Item</div><div class="md-ringkas-nilai">{{ ring.item }}</div><div class="md-ringkas-meta">Nomor part terdaftar</div></div>
+    <div class="md-ikon-kotak"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+  </div>
+  <div class="md-ringkas-item">
+    <div><div class="md-ringkas-label">Unit Mesin</div><div class="md-ringkas-nilai">{{ ring.mesin_aktif }}</div><div class="md-ringkas-meta">{{ ring.mesin_rincian|default:"Belum ada mesin aktif" }}</div></div>
+    <div class="md-ikon-kotak"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></div>
+  </div>
+  <div class="md-ringkas-item">
+    <div><div class="md-ringkas-label">Akun Pengguna</div><div class="md-ringkas-nilai">{{ ring.user_aktif }}</div><div class="md-ringkas-meta">Admin dan operator aktif</div></div>
+    <div class="md-ikon-kotak"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+  </div>
+  <div class="md-ringkas-item">
+    <div><div class="md-ringkas-label">Grup Otorisasi</div><div class="md-ringkas-nilai">{{ ring.group }}</div><div class="md-ringkas-meta">Kelompok hak akses</div></div>
+    <div class="md-ikon-kotak"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+  </div>
+</section>
+
+<section class="md-grid">
+  <div class="md-kolom-modul">
+    {% for app in app_list %}
+    <div class="md-kartu-app">
+      <div class="md-kartu-kepala">
+        <span class="md-kartu-judul">{{ app.name }}</span>
+        <span class="md-kartu-lencana">{{ app.models|length }} modul</span>
+      </div>
+      <table class="md-tabel-modul">
+        <tbody>
+          {% for model in app.models %}
+          <tr class="md-baris-modul" data-kata="{{ model.name|lower }} {{ model.object_name|keterangan_modul|lower }}">
+            <td>
+              <div class="md-modul-info">
+                <div class="md-modul-ikon">
+                  {% if model.object_name == "Formulir" %}
+                  <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  {% elif model.object_name == "Item" %}
+                  <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                  {% elif model.object_name == "Mesin" %}
+                  <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                  {% elif model.object_name == "Group" %}
+                  <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  {% elif model.object_name == "User" %}
+                  <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  {% elif model.object_name == "Operator" %}
+                  <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="11" r="2.5"/><path d="M5.5 17c.7-1.8 2-2.5 3.5-2.5s2.8.7 3.5 2.5"/><line x1="15" y1="10" x2="18" y2="10"/><line x1="15" y1="14" x2="18" y2="14"/></svg>
+                  {% else %}
+                  <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
+                  {% endif %}
+                </div>
+                <div>
+                  {% if model.admin_url %}<a href="{{ model.admin_url }}" class="md-modul-nama">{% else %}<span class="md-modul-nama">{% endif %}
+                    <span>{{ model.name }}</span>
+                    <span class="md-pil">{{ ring|ambil:model.object_name }} {{ model.object_name|satuan_modul }}</span>
+                  {% if model.admin_url %}</a>{% else %}</span>{% endif %}
+                  <div class="md-modul-ket">{{ model.object_name|keterangan_modul }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="md-aksi">
+              <div class="md-aksi-grup">
+                {% if model.add_url %}
+                <a class="md-tombol-tambah" href="{{ model.add_url }}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>Tambah</span>
+                </a>
+                {% endif %}
+                {% if model.admin_url %}
+                <a class="md-tombol-ubah" href="{{ model.admin_url }}">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  <span>{% if model.perms.change %}Ubah{% else %}Lihat{% endif %}</span>
+                </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% empty %}
+    <div class="md-kartu-app"><p class="md-kosong">Anda tidak punya izin untuk melihat atau mengubah data apa pun.</p></div>
+    {% endfor %}
+  </div>
+
+  <aside class="md-terbaru" aria-label="Tindakan terbaru">
+    <div class="md-terbaru-kepala">
+      <div>
+        <div class="md-terbaru-judul">Tindakan terbaru</div>
+        <div class="md-terbaru-sub">Tindakan saya · {{ user.get_username }}</div>
+      </div>
+      <span class="md-pil" id="jumlah-log">{{ admin_log|length }} aktivitas</span>
+    </div>
+    {% if not admin_log %}
+    <p class="md-kosong">Belum ada tindakan.</p>
+    {% else %}
+    <ul class="md-terbaru-daftar" id="daftar-log">
+      {% for entry in admin_log %}
+      <li class="md-log" data-kata="{{ entry.object_repr|lower }} {{ entry.content_type.name|lower }}">
+        <div class="md-log-kiri">
+          <span class="md-log-ikon {% if entry.is_addition %}tambah{% elif entry.is_change %}ubah{% else %}hapus{% endif %}" aria-hidden="true">
+            {% if entry.is_addition %}<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            {% elif entry.is_change %}<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            {% else %}<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>{% endif %}
+          </span>
+          <div class="md-log-teks">
+            {% if entry.is_deletion or not entry.get_admin_url %}<span class="md-log-objek">{{ entry.object_repr }}</span>
+            {% else %}<a class="md-log-objek" href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>{% endif %}
+            <div class="md-log-model">{% if entry.content_type %}{{ entry.content_type.name|capfirst }}{% else %}Konten tidak diketahui{% endif %}</div>
+          </div>
+        </div>
+        <span class="md-log-tag {% if entry.is_addition %}tambah{% elif entry.is_change %}ubah{% else %}hapus{% endif %}">{% if entry.is_addition %}Ditambah{% elif entry.is_change %}Diubah{% else %}Dihapus{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </aside>
+</section>
+
+<script>
+  (function () {
+    // Pencarian di browser: menyaring modul dan riwayat tindakan
+    var kotak = document.getElementById('cari-modul');
+    var baris = [].slice.call(document.querySelectorAll('.md-baris-modul'));
+    var log = [].slice.call(document.querySelectorAll('.md-log'));
+    var jumlah = document.getElementById('jumlah-log');
+    kotak.addEventListener('input', function () {
+      var q = kotak.value.trim().toLowerCase(), n = 0;
+      baris.forEach(function (el) { el.hidden = !!q && el.getAttribute('data-kata').indexOf(q) < 0; });
+      log.forEach(function (el) {
+        var ok = !q || el.getAttribute('data-kata').indexOf(q) > -1;
+        el.hidden = !ok; if (ok) n++;
+      });
+      if (jumlah && log.length) jumlah.textContent = n + ' aktivitas';
+    });
+  })();
+</script>
+{% endblock %}

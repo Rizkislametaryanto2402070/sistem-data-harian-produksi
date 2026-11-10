@@ -1,0 +1,90 @@
+{% extends "produksi/base.html" %}
+{% block judul %}Plan {{ mesin }} · Data Harian Produksi{% endblock %}
+{% block isi %}
+<p class="kembali"><a href="{{ kembali }}">&larr; Kembali ke ringkasan</a></p>
+
+<section class="kartu kepala-formulir">
+  <div class="judul-aksi">
+    <h1>Plan {{ mesin }}</h1>
+    <p class="konteks tebal">{{ tanggal|date:"l, j F Y" }} · Shift {{ shift }}</p>
+  </div>
+  <p>Pilih item lalu isi Plan untuk tiap baris. Operator akan mengisi data aktual berdasarkan baris di bawah. Baris yang dibiarkan kosong diabaikan.</p>
+</section>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {{ formset.management_form }}
+  {{ formset.non_form_errors }}
+
+  <section class="panel">
+    <header class="panel-kepala">Daftar item dan alokasi target (maksimal 12 baris)</header>
+    <div class="gulir polos">
+    <table class="tabel tabel-kartu" id="tabel-plan">
+      <thead><tr><th>No</th><th>Item / No. Part</th><th class="angka">Plan (Qty)</th><th class="tengah">Hapus</th></tr></thead>
+      <tbody>
+        {% for form in formset %}
+        <tr class="baris-plan{% if not form.instance.pk %} kosong{% endif %}">
+          <td class="judul">{% if form.instance.pk %}{{ form.instance.urut }}{% else %}+{% endif %}</td>
+          <td class="penuh" data-label="Item / No. Part">{% for h in form.hidden_fields %}{{ h }}{% endfor %}{{ form.item }}{{ form.item.errors }}{{ form.non_field_errors }}</td>
+          <td class="angka penuh" data-label="Plan (Qty)">{{ form.plan }}{{ form.plan.errors }}</td>
+          <td class="tengah" data-label="Hapus">{% if form.instance.pk %}{{ form.DELETE }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <div class="panel-kaki">
+      <button type="button" class="tombol" id="tambah-baris">+ Tambah baris</button>
+      <div class="total-target" id="total-target" aria-live="polite">Total target shift: 0 pcs (0 item aktif)</div>
+    </div>
+  </section>
+
+  <div class="panel aksi-akhir">
+    <a class="tombol" href="{{ kembali }}">Batal</a>
+    <button type="submit" class="tombol utama">Simpan plan</button>
+  </div>
+  <p class="redup">Item baru ditambahkan lewat menu Master data &rarr; Item.</p>
+</form>
+{% endblock %}
+
+{% block skrip %}
+<script>
+  (function () {
+    var tabel = document.getElementById('tabel-plan');
+    var kosong = Array.prototype.slice.call(tabel.querySelectorAll('tr.kosong'));
+    var tombol = document.getElementById('tambah-baris');
+    var tampil = 0;
+
+    // Tampilkan hanya 2 baris kosong dulu; "Tambah baris" membuka baris berikutnya.
+    function buka(n) {
+      for (var i = 0; i < n && tampil < kosong.length; i++, tampil++) kosong[tampil].classList.add('tampil');
+      if (tampil >= kosong.length) tombol.hidden = true;
+    }
+    // Baris yang berisi galat (setelah gagal simpan) harus tetap terlihat.
+    kosong.forEach(function (tr, i) {
+      if (tr.querySelector('.errorlist')) { tr.classList.add('tampil'); tampil = Math.max(tampil, i + 1); }
+    });
+    buka(Math.max(0, 2 - tampil));
+    if (!kosong.length) tombol.hidden = true;
+    tombol.addEventListener('click', function () { buka(1); });
+
+    // Total target shift dihitung langsung dari baris yang terisi dan tidak dicentang Hapus.
+    var keluaran = document.getElementById('total-target');
+    function hitung() {
+      var total = 0, aktif = 0;
+      tabel.querySelectorAll('tbody tr').forEach(function (tr) {
+        var item = tr.querySelector('select[name$="-item"]');
+        var plan = tr.querySelector('input[name$="-plan"]');
+        var hapus = tr.querySelector('input[name$="-DELETE"]');
+        if (!item || !item.value || (hapus && hapus.checked)) return;
+        aktif += 1;
+        total += parseInt(plan && plan.value, 10) || 0;
+      });
+      keluaran.textContent = 'Total target shift: ' + total.toLocaleString('id-ID') + ' pcs (' + aktif + ' item aktif)';
+    }
+    tabel.addEventListener('input', hitung);
+    tabel.addEventListener('change', hitung);
+    hitung();
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,21 @@
+# Lingkungan dan cache
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Data dan rahasia: jangan pernah di-commit
+db.sqlite3
+*.sqlite3
+.env
+*.env
+*.log
+
+# Hasil build
+staticfiles/
+
+# Editor dan sistem
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

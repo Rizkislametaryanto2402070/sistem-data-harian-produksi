@@ -1,0 +1,81 @@
+{% extends "produksi/base.html" %}
+{% block judul %}{{ f.mesin }} · Isi data{% endblock %}
+{% block lebar %}sempit dengan-bilah{% endblock %}
+{% block isi %}
+<p class="kembali"><a href="{{ kembali }}">&larr; Pilih mesin lain</a></p>
+
+<section class="kartu kepala-formulir">
+  <div class="mesin-judul">
+    <h1>{{ f.mesin }}</h1>
+    {% include "produksi/_status.html" with status=f.status_operator %}
+  </div>
+  <p class="konteks">{{ f.tanggal|date:"l, j F Y" }} · Shift {{ f.shift }}{% if f.pengisi and not boleh %} · Diisi oleh {{ f.pengisi.nama }}{% endif %}</p>
+  {% if boleh %}{% include "produksi/_pilih_operator.html" with dalam_formulir=True %}{% endif %}
+</section>
+
+{% if boleh %}
+<div class="panduan">
+  <strong>{{ jumlah_terisi }} dari {{ jumlah_baris }} baris terisi.</strong>
+  Isi jam mulai, jam selesai, dan Actual untuk setiap item.
+</div>
+{% else %}
+<div class="panduan">Data sudah dikirim ke admin, jadi hanya bisa dilihat. Bila ada yang perlu dikoreksi, minta admin mengembalikannya.</div>
+{% endif %}
+
+<form method="post" novalidate id="form-isi">
+  {% csrf_token %}
+  {{ formset.management_form }}
+  {{ formset.non_form_errors }}
+
+  {% for form in formset %}
+  <section class="baris-kartu">
+    {{ form.id }}
+    <header class="baris-kepala">
+      <span>BARIS {{ form.instance.urut }}</span>
+      <span>Plan: {{ form.instance.plan|stringformat:"d" }}</span>
+    </header>
+    <div class="baris-badan">
+      <div class="item-nama">{{ form.instance.item.nama }}</div>
+      {% if form.instance.item.no_part %}<div class="redup">Part No: {{ form.instance.item.no_part }}</div>{% endif %}
+      {{ form.non_field_errors }}
+      <div class="grid-isi">
+        <div class="f"><label for="{{ form.jam_mulai.id_for_label }}">Jam mulai</label>{{ form.jam_mulai }}{{ form.jam_mulai.errors }}</div>
+        <div class="f"><label for="{{ form.jam_selesai.id_for_label }}">Jam selesai</label>{{ form.jam_selesai }}{{ form.jam_selesai.errors }}</div>
+        <div class="f"><label for="{{ form.actual.id_for_label }}">Actual</label>{{ form.actual }}{{ form.actual.errors }}</div>
+        <div class="f"><label for="{{ form.ng.id_for_label }}">NG</label>{{ form.ng }}{{ form.ng.errors }}</div>
+        <div class="f lebar"><label for="{{ form.keterangan.id_for_label }}">Keterangan (opsional)</label>{{ form.keterangan }}{{ form.keterangan.errors }}</div>
+      </div>
+    </div>
+  </section>
+  {% endfor %}
+
+  {% if boleh %}
+  <div class="bilah-aksi">
+    <div class="bilah-isi">
+      <button type="submit" name="simpan" class="tombol">Simpan sementara</button>
+      <button type="submit" name="kirim" class="tombol utama" id="tombol-kirim">Kirim ke admin</button>
+    </div>
+  </div>
+  {% endif %}
+</form>
+{% endblock %}
+
+{% block skrip %}
+{% if boleh %}
+<script>
+  // Jam selesai sebuah baris otomatis menjadi jam mulai baris berikutnya (bila masih kosong).
+  document.querySelectorAll('input[name$="-jam_selesai"]').forEach(function (el) {
+    el.addEventListener('change', function () {
+      var m = el.name.match(/^form-(\d+)-jam_selesai$/);
+      if (!m || !el.value) return;
+      var berikut = document.querySelector('input[name="form-' + (parseInt(m[1], 10) + 1) + '-jam_mulai"]');
+      if (berikut && !berikut.value) berikut.value = el.value;
+    });
+  });
+  // Konfirmasi sebelum mengirim, karena setelah dikirim data terkunci.
+  document.getElementById('tombol-kirim').addEventListener('click', function (e) {
+    if (!confirm('Kirim data ke admin? Setelah dikirim, data tidak bisa diubah.')) e.preventDefault();
+  });
+</script>
+{% endif %}
+{% endblock %}

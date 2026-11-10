@@ -1,0 +1,75 @@
+{% extends "produksi/base.html" %}
+{% load humanize %}
+{% block judul %}{{ f.mesin }} · Periksa{% endblock %}
+{% block isi %}
+<p class="kembali"><a href="{{ kembali }}">&larr; Kembali ke ringkasan</a></p>
+
+<div class="kepala-judul">
+  <div class="mesin-judul sebaris">
+    <h1>{{ f.mesin }}</h1>
+    {% include "produksi/_status.html" with status=f.status %}
+  </div>
+  <p class="konteks">{{ f.tanggal|date:"l, j F Y" }} · Shift {{ f.shift }} · Operator: {{ f.nama_operator|default:"-" }}</p>
+</div>
+
+<section class="panel">
+  <header class="panel-kepala">Rincian hasil produksi mesin <span class="redup">({{ baris|length }} item)</span></header>
+  <div class="gulir polos">
+  <table class="tabel tabel-baca">
+    <thead>
+      <tr><th>No</th><th>Item / No. Part</th><th>Jam</th><th class="angka">Plan</th><th class="angka">Actual</th><th class="angka">NG</th><th>Keterangan</th></tr>
+    </thead>
+    <tbody>
+      {% for b in baris %}
+      <tr>
+        <td>{{ b.urut }}</td>
+        <td>{{ b.item.label }}</td>
+        <td class="nowrap">{% if b.jam_mulai %}{{ b.jam_mulai|time:"H:i" }} - {{ b.jam_selesai|time:"H:i" }}{% else %}-{% endif %}</td>
+        <td class="angka">{{ b.plan|intcomma }}</td>
+        <td class="angka tebal">{{ b.actual|default_if_none:"-"|intcomma }}</td>
+        <td class="angka{% if b.ng %} ng{% endif %}">{{ b.ng|default_if_none:"-"|intcomma }}</td>
+        <td>{{ b.keterangan|default:"-" }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="redup">Belum ada item.</td></tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th colspan="3">TOTAL</th>
+        <th class="angka">{{ total_plan|intcomma }}</th>
+        <th class="angka">{{ total_actual|intcomma }}</th>
+        <th class="angka">{{ total_ng|intcomma }}</th>
+        <th>{% if total_plan %}Selisih Actual dan Plan: {{ selisih|intcomma }} ({{ persen }}%){% endif %}</th>
+      </tr>
+    </tfoot>
+  </table>
+  </div>
+</section>
+
+<section class="panel persetujuan{% if f.disetujui_at %} selesai{% endif %}">
+  <h2>Verifikasi dan keputusan admin</h2>
+  {% if f.disetujui_at %}
+    <p><strong>Disetujui oleh {{ f.disetujui_oleh.get_full_name|default:f.disetujui_oleh.get_username }}, {{ f.disetujui_at|date:"j M Y H:i" }}.</strong></p>
+    <p>Bila ada yang perlu dikoreksi, kembalikan formulir ke operator. Status persetujuan akan dihapus.</p>
+  {% elif f.dikirim_at %}
+    <p>Operator sudah mengirim data ini. Periksa angka di atas, lalu setujui. Bila ada yang salah, kembalikan ke operator.</p>
+  {% else %}
+    <p>Operator belum mengirim formulir ini, jadi belum bisa disetujui.</p>
+  {% endif %}
+
+  <form method="post" action="{% url 'panel_aksi' f.pk %}" class="aksi-bawah">
+    {% csrf_token %}
+    {% if f.dikirim_at and not f.disetujui_at %}
+      <button type="submit" name="aksi" value="setujui" class="tombol utama">Setujui</button>
+    {% endif %}
+    {% if f.dikirim_at %}
+      <button type="submit" name="aksi" value="buka" class="tombol"
+              onclick="return confirm('Kembalikan formulir ini ke operator? Status persetujuan akan dihapus.');">Kembalikan ke operator</button>
+    {% endif %}
+    {% if f.plan_bisa_ubah %}
+      <a class="tombol" href="{{ plan_url }}">Ubah plan</a>
+    {% endif %}
+  </form>
+</section>
+{% endblock %}

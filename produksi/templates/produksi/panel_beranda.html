@@ -1,0 +1,162 @@
+{% extends "produksi/base.html" %}
+{% load humanize %}
+{% block judul %}Ringkasan · Data Harian Produksi{% endblock %}
+{% block isi %}
+<section class="kepala-ringkasan">
+  <div>
+    <h1>Ringkasan produksi</h1>
+    <p class="konteks">{{ tanggal|date:"l, j F Y" }} · Shift {{ shift }}</p>
+  </div>
+  <div class="kontrol-ringkasan">
+    <form method="get" id="form-hari" class="form-hari">
+      <label for="id_tanggal" class="sr-only">Tanggal produksi</label>
+      {{ pilih.tanggal }}
+      <label for="id_shift" class="sr-only">Shift</label>
+      {{ pilih.shift }}
+      <noscript><button type="submit" class="tombol utama kecil">Tampilkan</button></noscript>
+    </form>
+    <a class="tombol" href="{% url 'panel_ekspor' %}?{{ qs }}">
+      <svg class="ikon-tombol" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V3"/></svg>
+      Unduh Excel
+    </a>
+  </div>
+</section>
+
+{# Satu kalimat "berikutnya" supaya admin tahu harus mulai dari mana; tombol massal ikut di sini #}
+<div class="panduan bilah{% if not hitung.belum and not hitung.menunggu and not hitung.perlu %} selesai{% endif %}">
+  <p>
+    {% if hitung.perlu %}
+      <strong>Berikutnya:</strong> {{ hitung.perlu }} formulir sudah dikirim operator dan menunggu persetujuan Anda.
+    {% elif hitung.belum %}
+      <strong>Berikutnya:</strong> {{ hitung.belum }} mesin belum punya plan. Isi satu per satu, atau salin dari hari sebelumnya.
+    {% elif hitung.menunggu %}
+      <strong>Berikutnya:</strong> menunggu operator mengisi {{ hitung.menunggu }} mesin.
+    {% else %}
+      <strong>Selesai.</strong> Semua formulir untuk shift ini sudah disetujui. Unduh Excel bila diperlukan.
+    {% endif %}
+  </p>
+  {% if hitung.belum or hitung.perlu %}
+  <div class="bilah-tombol">
+    {% if hitung.belum %}
+    <form method="post" action="{% url 'panel_salin' %}?{{ qs }}">
+      {% csrf_token %}
+      <button type="submit" class="tombol kecil">Salin plan dari hari sebelumnya</button>
+    </form>
+    {% endif %}
+    {% if hitung.perlu %}
+    <form method="post" action="{% url 'panel_setujui_semua' %}?{{ qs }}"
+          onsubmit="return confirm('Setujui {{ hitung.perlu }} formulir yang sudah dikirim operator?');">
+      {% csrf_token %}
+      <button type="submit" class="tombol kecil utama">Setujui semua yang sudah dikirim ({{ hitung.perlu }})</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<div class="ringkas">
+  <button type="button" class="ubin ubin-tombol" data-saring="belum-ada-plan" aria-pressed="false">
+    {% include "produksi/_status.html" with status="Belum ada plan" %}
+    <span class="angka-besar">{{ hitung.belum }}</span>
+    <span class="ubin-ket">Mesin belum terjadwal</span>
+  </button>
+  <button type="button" class="ubin ubin-tombol" data-saring="menunggu-operator" aria-pressed="false">
+    {% include "produksi/_status.html" with status="Menunggu operator" %}
+    <span class="angka-besar">{{ hitung.menunggu }}</span>
+    <span class="ubin-ket">Menunggu diisi operator</span>
+  </button>
+  <button type="button" class="ubin ubin-tombol" data-saring="perlu-disetujui" aria-pressed="false">
+    {% include "produksi/_status.html" with status="Perlu disetujui" %}
+    <span class="angka-besar">{{ hitung.perlu }}</span>
+    <span class="ubin-ket">Sudah dikirim operator</span>
+  </button>
+  <button type="button" class="ubin ubin-tombol" data-saring="disetujui" aria-pressed="false">
+    {% include "produksi/_status.html" with status="Disetujui" %}
+    <span class="angka-besar">{{ hitung.selesai }}</span>
+    <span class="ubin-ket">Sudah disetujui</span>
+  </button>
+</div>
+
+<section class="panel panel-mesin">
+  <div class="alat-tabel">
+    <div class="tab-saring" role="group" aria-label="Saring menurut status">
+      <button type="button" class="tab aktif" data-saring="semua" aria-pressed="true">Semua ({{ baris|length }})</button>
+      <button type="button" class="tab" data-saring="belum-ada-plan" aria-pressed="false">Belum ada plan ({{ hitung.belum }})</button>
+      <button type="button" class="tab" data-saring="menunggu-operator" aria-pressed="false">Menunggu operator ({{ hitung.menunggu }})</button>
+      <button type="button" class="tab" data-saring="perlu-disetujui" aria-pressed="false">Perlu disetujui ({{ hitung.perlu }})</button>
+      <button type="button" class="tab" data-saring="disetujui" aria-pressed="false">Disetujui ({{ hitung.selesai }})</button>
+    </div>
+    <label for="cari-mesin" class="sr-only">Cari mesin</label>
+    <input type="search" id="cari-mesin" class="cari" placeholder="Cari nama mesin..." autocomplete="off">
+  </div>
+
+  <div class="gulir polos">
+  <table class="tabel tabel-kartu tabel-ringkasan" id="tabel-mesin">
+    <thead>
+      <tr><th>Mesin</th><th>Status</th><th>Operator</th><th class="angka">Actual</th><th class="angka">NG</th><th class="aksi">Tindakan</th></tr>
+    </thead>
+    <tbody>
+      {% for b in baris %}
+      <tr data-status="{{ b.status|slugify }}" data-cari="{{ b.mesin.kode|lower }} {{ b.formulir.nama_operator|default:''|lower }}">
+        <td class="judul"><strong>{{ b.mesin.kode }}</strong>{% if not b.mesin.aktif %} <span class="redup">(nonaktif)</span>{% endif %}</td>
+        <td data-label="Status">{% include "produksi/_status.html" with status=b.status %}</td>
+        <td data-label="Operator">{{ b.formulir.nama_operator|default:"-" }}</td>
+        <td class="angka" data-label="Actual">{% if b.formulir %}{{ b.formulir.total_actual|intcomma }}{% else %}-{% endif %}</td>
+        <td class="angka" data-label="NG">{% if b.formulir %}{{ b.formulir.total_ng|intcomma }}{% else %}-{% endif %}</td>
+        <td class="aksi"><a class="tombol kecil{% if b.aksi.primer %} utama{% endif %}" href="{{ b.aksi.url }}">{{ b.aksi.label }}</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <div class="keadaan-kosong" id="keadaan-kosong" hidden>
+    <p><strong>Tidak ada mesin untuk filter ini.</strong></p>
+    <button type="button" class="tombol kecil" id="tampil-semua">Tampilkan semua mesin</button>
+  </div>
+</section>
+
+<p class="redup">Excel berisi seluruh formulir untuk tanggal dan shift di atas, memakai template Data Harian Produksi.</p>
+{% endblock %}
+
+{% block skrip %}
+<script>
+  (function () {
+    // Ganti tanggal atau shift langsung memuat ulang halaman
+    var formHari = document.getElementById('form-hari');
+    formHari.addEventListener('change', function () { formHari.submit(); });
+
+    // Saring tabel menurut status dan kata pencarian, di browser saja
+    var baris = [].slice.call(document.querySelectorAll('#tabel-mesin tbody tr'));
+    var pemicu = [].slice.call(document.querySelectorAll('[data-saring]'));
+    var cari = document.getElementById('cari-mesin');
+    var kosong = document.getElementById('keadaan-kosong');
+    var aktif = 'semua';
+
+    function terapkan() {
+      var kata = cari.value.trim().toLowerCase();
+      var tampil = 0;
+      baris.forEach(function (tr) {
+        var cocok = (aktif === 'semua' || tr.getAttribute('data-status') === aktif) &&
+                    (!kata || tr.getAttribute('data-cari').indexOf(kata) > -1);
+        tr.hidden = !cocok;
+        if (cocok) tampil++;
+      });
+      kosong.hidden = tampil > 0;
+      pemicu.forEach(function (el) {
+        var hidup = el.getAttribute('data-saring') === aktif;
+        el.classList.toggle('aktif', hidup);
+        el.setAttribute('aria-pressed', hidup ? 'true' : 'false');
+      });
+    }
+
+    pemicu.forEach(function (el) {
+      el.addEventListener('click', function () { aktif = el.getAttribute('data-saring'); terapkan(); });
+    });
+    cari.addEventListener('input', terapkan);
+    document.getElementById('tampil-semua').addEventListener('click', function () {
+      aktif = 'semua'; cari.value = ''; terapkan();
+    });
+  })();
+</script>
+{% endblock %}

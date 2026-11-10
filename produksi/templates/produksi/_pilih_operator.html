@@ -1,0 +1,37 @@
+{% comment %}Pemilih nama operator untuk laptop bersama.
+Mode biasa (Pilih mesin): form sendiri, langsung tersimpan saat nama diganti.
+Mode dalam_formulir (Isi data): hanya kotak pilih yang ikut formulir isi (atribut form), tanpa memuat ulang halaman, supaya isian tidak hilang.{% endcomment %}
+{% if daftar_operator %}
+{% if dalam_formulir %}
+<div class="pilih-nama{% if wajib_pilih_nama %} wajib{% endif %}">
+  <label for="pilih-operator">Nama operator</label>
+  <select name="operator" id="pilih-operator" form="form-isi">
+    <option value="">Pilih nama Anda</option>
+    {% for o in daftar_operator %}
+    <option value="{{ o.pk }}"{% if operator_dipilih and operator_dipilih.pk == o.pk %} selected{% endif %}>{{ o.nama }}</option>
+    {% endfor %}
+  </select>
+  {% if wajib_pilih_nama %}<span class="pilih-nama-info">Pilih nama dulu sebelum menyimpan atau mengirim.</span>{% endif %}
+</div>
+{% else %}
+<form method="post" action="{% url 'operator_pilih_nama' %}" class="pilih-nama{% if wajib_pilih_nama %} wajib{% endif %}" id="form-nama">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <label for="pilih-operator">Nama operator</label>
+  <select name="operator" id="pilih-operator">
+    <option value="">Pilih nama Anda</option>
+    {% for o in daftar_operator %}
+    <option value="{{ o.pk }}"{% if operator_dipilih and operator_dipilih.pk == o.pk %} selected{% endif %}>{{ o.nama }}</option>
+    {% endfor %}
+  </select>
+  <noscript><button type="submit" class="tombol">Simpan</button></noscript>
+  {% if wajib_pilih_nama %}<span class="pilih-nama-info">Pilih nama dulu sebelum mengisi data.</span>{% endif %}
+</form>
+<script>
+  (function () {
+    var s = document.getElementById('pilih-operator');
+    if (s) s.addEventListener('change', function () { document.getElementById('form-nama').submit(); });
+  })();
+</script>
+{% endif %}
+{% endif %}

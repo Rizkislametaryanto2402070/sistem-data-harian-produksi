@@ -1,0 +1,60 @@
+/* Bilah atas bersama: dipakai halaman sistem (app.css) dan halaman Master data (admin.css). */
+.pd-navbar {
+  --navy: #12355b; --putih: #ffffff; --kanvas: #f8fafc; --redam: #f1f5f9; --garis: #e2e8f0; --garis-kuat: #cbd5e1;
+  --teks: #0f172a; --teks-2: #334155; --teks-redup: #64748b;
+  --bahaya: #dc2626; --bahaya-latar: #fef2f2; --bahaya-garis: #fecaca;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px; line-height: 1.5; box-sizing: border-box;
+}
+.pd-navbar *, .pd-navbar *::before, .pd-navbar *::after { box-sizing: border-box; }
+.pd-navbar form { margin: 0; display: inline; }
+.pd-navbar a { color: inherit; }
+.pd-navbar { background: var(--putih); border-bottom: 1px solid var(--garis); position: sticky; top: 0; z-index: 40; }
+.pd-navbar-inner { max-width: 1200px; margin: 0 auto; padding: .6rem 1rem; min-height: 62px; display: flex;
+  align-items: center; justify-content: space-between; gap: .6rem 1rem; flex-wrap: wrap; }
+.pd-brand { display: flex; align-items: center; gap: 11px; text-decoration: none; color: var(--teks); min-width: 0; }
+.pd-logo { width: 34px; height: 34px; flex: 0 0 auto; }
+.pd-brand-text { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pd-brand-title { font-size: 1rem; font-weight: 700; letter-spacing: -.015em; white-space: nowrap; }
+.pd-brand-divider { width: 1px; height: 16px; background: var(--garis-kuat); flex: 0 0 auto; }
+.pd-brand-company { font-size: .85rem; color: var(--teks-redup); white-space: nowrap; }
+.pd-navbar-right { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.pd-nav-group { display: flex; align-items: center; gap: 4px; }
+.pd-nav-link { display: inline-flex; align-items: center; gap: 7px; padding: .45rem .75rem; min-height: 40px;
+  border-radius: 6px; border: 1px solid transparent; font-size: .9rem; font-weight: 500; color: var(--teks-2);
+  text-decoration: none; white-space: nowrap; }
+.pd-nav-link svg, .pd-user-icon, .pd-logout-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor;
+  stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+.pd-nav-link svg { color: var(--teks-redup); }
+.pd-nav-link:hover { background: var(--redam); color: var(--teks); }
+.pd-nav-link.active { background: #eef3f8; color: var(--navy); font-weight: 600; border-color: var(--garis-kuat); }
+.pd-nav-link.active svg { color: var(--navy); }
+.pd-nav-separator { width: 1px; height: 22px; background: var(--garis); }
+.pd-user-chip { display: inline-flex; align-items: center; gap: 8px; padding: .3rem .5rem .3rem .65rem; min-height: 38px;
+  background: var(--kanvas); border: 1px solid var(--garis); border-radius: 6px; }
+.pd-user-icon { color: var(--teks-2); }
+.pd-username { font-size: .9rem; font-weight: 600; color: var(--teks); white-space: nowrap; }
+.pd-role-badge { padding: 2px 7px; border-radius: 4px; font-size: .68rem; font-weight: 700; letter-spacing: .03em;
+  text-transform: uppercase; line-height: 1.2; }
+.pd-role-badge.role-admin { background: var(--navy); color: #fff; }
+.pd-role-badge.role-operator { background: #e2e8f0; color: #334155; border: 1px solid var(--garis-kuat); }
+.pd-logout-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 .75rem;
+  border-radius: 6px; background: var(--putih); border: 1px solid var(--garis); color: var(--teks-2);
+  font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.pd-logout-btn:hover { background: var(--bahaya-latar); border-color: var(--bahaya-garis); color: var(--bahaya); }
+@media (max-width: 900px) { .pd-brand-divider, .pd-brand-company { display: none; } }
+@media (max-width: 640px) {
+  .pd-navbar-inner { flex-direction: column; align-items: stretch; gap: .5rem; }
+  .pd-navbar-right { justify-content: space-between; border-top: 1px solid var(--garis); padding-top: .5rem; }
+  .pd-nav-separator { display: none; }
+  .pd-nav-group { width: 100%; }
+}
+@media (min-width: 720px) { .pd-navbar-inner { padding: .6rem 2rem; } }
+
+.pd-util-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 .65rem; border-radius: 6px;
+  background: var(--putih); border: 1px solid var(--garis); color: var(--teks-2); font-size: .85rem; font-weight: 500;
+  text-decoration: none; white-space: nowrap; }
+.pd-util-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round;
+  stroke-linejoin: round; color: var(--teks-redup); }
+.pd-util-btn:hover { background: var(--redam); color: var(--teks); border-color: var(--garis-kuat); }
+@media (max-width: 640px) { .pd-util-btn span { display: none; } }

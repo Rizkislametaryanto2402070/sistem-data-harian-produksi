@@ -1,0 +1,17 @@
+{# Pemilih tanggal + shift. Tertutup secara bawaan; hari ini dan shift berjalan sudah terpilih. #}
+<details class="ganti-hari"{% if tanggal != hari_ini %} open{% endif %}>
+  <summary>Ganti tanggal atau shift</summary>
+  <form method="get" class="pilih-hari">
+    <div class="kolom-pilih">
+      <label for="id_tanggal">Tanggal</label>
+      {{ pilih.tanggal }}
+    </div>
+    <div class="kolom-pilih">
+      <label for="id_shift">Shift</label>
+      {{ pilih.shift }}
+    </div>
+    <button type="submit" class="tombol utama">Tampilkan</button>
+    <a class="tombol" href="?tanggal={{ kemarin|date:'Y-m-d' }}&shift={{ shift }}">Hari sebelumnya</a>
+    <a class="tombol" href="?tanggal={{ besok|date:'Y-m-d' }}&shift={{ shift }}">Hari berikutnya</a>
+  </form>
+</details>
